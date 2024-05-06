@@ -1,0 +1,1 @@
+var verifyCallback=function(response){var envio=$.post("inc/dataInput.html",{reCAPTCHA:true,value:response,TYPE:'Captcha'})};var onloadCallback=function(){grecaptcha.render('reCAPTCHA',{'sitekey':'6Ld3NwETAAAAACU2dUhT68T2rhFeNrHrNS6VJXHZ','callback':verifyCallback,'theme':'dark'/* light | dark */});};
