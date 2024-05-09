@@ -1,6 +1,46 @@
 <?php
 require('config.php');
 require('dbaSis.php');
+session_start();
+
+// Função para definir um cookie de login com validade de 15 minutos
+function definirCookieLogin() {
+    // Definir um cookie de login com validade de 15 minutos
+    $tempoExpiracao = time() + 900; // 15 minutos (15 * 60 segundos)
+    setcookie("usuarioLogado", "true", $tempoExpiracao, "/");
+}
+
+// Função para verificar se o usuário está logado
+function verificarLogin() {
+    return isset($_COOKIE['usuarioLogado']) && $_COOKIE['usuarioLogado'] === "true";
+}
+
+// Função para redirecionar para a página de login
+function redirecionarParaLogin() {
+    header("Location: Entrar.html");
+    exit();
+}
+
+// Função para consultar as informações da conta do usuário no banco de dados
+function obterInformacoesConta($userId) {
+    global $conn;
+
+    $stmt = $conn->prepare("SELECT * FROM contas WHERE id=?");
+    
+    if ($stmt) {
+        $stmt->bind_param("i", $userId);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($result->num_rows == 1) {
+            return $result->fetch_assoc();
+        } else {
+            return null; // Usuário não encontrado
+        }
+    } else {
+        return null; // Erro na preparação da consulta
+    }
+}
 
 // Verificar se os dados foram submetidos
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -30,6 +70,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
             if ($result->num_rows == 1) {
                 $row = $result->fetch_assoc();
+                $userId = $row['id']; // Obter o ID do usuário
+                
                 $senhaHash = $row['senha'];
                 $tentativasLogin = $row['tentativas_login'];
                 $bloqueado = $row['bloqueado'];
@@ -41,8 +83,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     // Verificar se já passaram 2 horas desde o bloqueio
                     if ($horaAtual - $horaBloqueio >= 7200) { // 7200 segundos = 2 horas
                         // Desbloquear o usuário
-                        $stmtDesbloquear = $conn->prepare("UPDATE contas SET bloqueado = 0, tentativas_login = 0, hora_bloqueio = NULL WHERE id = ?");
-                        $stmtDesbloquear->bind_param("i", $row['id']);
+                        $stmtDesbloquear = $conn->prepare("UPDATE contas SET bloqueado = 0, tentativas_login = 0, hora_bloqueio = NULL WHERE email=? OR login=?");
+                        $stmtDesbloquear->bind_param("ss", $email, $usuario);
                         $stmtDesbloquear->execute();
                         $stmtDesbloquear->close();
                     } else {
@@ -55,16 +97,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
                 // Verificar se a senha fornecida corresponde à senha hash no banco de dados
                 if (password_verify($senha, $senhaHash)) {
-                    // Login bem-sucedido
+                    // Senha correta, definir o cookie de login
+                    definirCookieLogin();
+                    
+                    // Definir o ID do usuário na sessão
+                    $_SESSION['userId'] = $userId;
+                    
                     // Reiniciar o contador de tentativas de login
-                    $stmtResetTentativas = $conn->prepare("UPDATE contas SET tentativas_login = 0 WHERE id = ?");
-                    $stmtResetTentativas->bind_param("i", $row['id']);
+                    $stmtResetTentativas = $conn->prepare("UPDATE contas SET tentativas_login = 0 WHERE email=? OR login=?");
+                    $stmtResetTentativas->bind_param("ss", $email, $usuario);
                     $stmtResetTentativas->execute();
                     $stmtResetTentativas->close();
-
-                    session_start();
-                    $_SESSION['emailOuUsuario'] = $row['email']; // Armazenar o email ou login na sessão para futuras verificações de autenticação
-                    header("Location: doacao.php"); // Redirecionar para a página de perfil
+                    
+                    // Redirecionar para a página de perfil
+                    header("Location: perfil.html");
                     exit();
                 } else {
                     // Incrementar o contador de tentativas de login
@@ -73,16 +119,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     // Verificar se o número de tentativas atingiu 5
                     if ($tentativasLogin >= 5) {
                         // Bloquear o usuário e registrar a hora do bloqueio
-                        $stmtBloquear = $conn->prepare("UPDATE contas SET bloqueado = 1, hora_bloqueio = NOW() WHERE id = ?");
-                        $stmtBloquear->bind_param("i", $row['id']);
+                        $stmtBloquear = $conn->prepare("UPDATE contas SET bloqueado = 1, hora_bloqueio = NOW() WHERE email=? OR login=?");
+                        $stmtBloquear->bind_param("ss", $email, $usuario);
                         $stmtBloquear->execute();
                         $stmtBloquear->close();
                         echo "Sua conta foi bloqueada temporariamente devido a muitas tentativas de login malsucedidas. Por favor, tente novamente mais tarde.";
                         exit();
                     } else {
                         // Atualizar o contador de tentativas de login
-                        $stmtAtualizarTentativas = $conn->prepare("UPDATE contas SET tentativas_login = ? WHERE id = ?");
-                        $stmtAtualizarTentativas->bind_param("ii", $tentativasLogin, $row['id']);
+                        $stmtAtualizarTentativas = $conn->prepare("UPDATE contas SET tentativas_login = ? WHERE email=? OR login=?");
+                        $stmtAtualizarTentativas->bind_param("iss", $tentativasLogin, $email, $usuario);
                         $stmtAtualizarTentativas->execute();
                         $stmtAtualizarTentativas->close();
                         $tentativasRestantes = 5 - $tentativasLogin;
@@ -104,6 +150,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // Campos não foram preenchidos
         echo "Por favor, preencha todos os campos.";
         exit();
+    }
+} else {
+    // Verificar se o usuário já está logado
+    if (!verificarLogin()) {
+        // O usuário não está logado, redirecionar para a página de login
+        redirecionarParaLogin();
     }
 }
 ?>

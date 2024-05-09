@@ -1,8 +1,32 @@
 <!doctype html>
 
-	<html class="no-js" lang="pt">
+	<html class="no-js" lang="pt-br">
 
 <head>
+
+	<script>
+        // Função para verificar se o usuário está logado
+        function verificarLogin() {
+            // Verificar se o cookie de login está presente
+            var cookies = document.cookie.split(";").map(cookie => cookie.trim());
+            var usuarioLogado = cookies.find(cookie => cookie.startsWith("usuarioLogado="));
+
+            if (usuarioLogado && usuarioLogado.split("=")[1] === "true") {
+                // Usuário está logado
+                console.log("Usuário está logado.");
+                // Você pode prosseguir com o carregamento da página normalmente
+            } else {
+                // Usuário não está logado
+                console.log("Usuário não está logado.");
+                // Redirecionar para a página de login ou tomar outras medidas
+                window.location.href = "Entrar.html";
+            }
+        }
+
+        // Chamar a função de verificação imediatamente
+        verificarLogin();
+    </script>
+
 
 <style type="text/css">
 	#contato {
@@ -135,6 +159,8 @@
 <!--<![endif]-->
 <link href="prod/css/main-12.css" rel="stylesheet" />
 <link rel="shortcut icon" href="img/global/favicon.ico">
+
+
 
 </head>
 

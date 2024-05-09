@@ -5,9 +5,9 @@ use PHPMailer\PHPMailer\Exception;
 require 'vendor/autoload.php';
 
 // Configurações do Gmail
-$emailTo = 'example@gmail.com';  // Seu endereço de email do Gmail
+$emailTo = 'withyourdestiny.nostalgic@gmail.com';  // Seu endereço de email do Gmail
 $emailFrom = 'yourapp@gmail.com';  // Endereço de email do remetente
-$password = 'sua_senha_de_app';  // Senha de aplicativo gerada
+$password = 'nostalgia.wyd@1707';  // Senha de aplicativo gerada
 $smtpHost = 'smtp.gmail.com';
 $smtpPort = 587;  // Porta TLS do Gmail
 
