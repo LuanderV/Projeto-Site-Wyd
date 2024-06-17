@@ -12,7 +12,13 @@
             if (usuarioLogado && usuarioLogado.split("=")[1] === "true") {
                 // Usuário está logado
                 console.log("Usuário está logado.");
-                // Você pode prosseguir com o carregamento da página normalmente
+                // Recuperar o login do cookie
+                var login = cookies.find(cookie => cookie.startsWith("login="));
+                if (login) {
+                    var loginValue = login.split("=")[1];
+                    // Preencher automaticamente o campo de login
+                    document.getElementById("userid").value = loginValue;
+                }
             } else {
                 // Usuário não está logado
                 console.log("Usuário não está logado.");

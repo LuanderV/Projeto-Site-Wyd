@@ -91,7 +91,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $stmtBloquear->bind_param("s", $login);
                 $stmtBloquear->execute();
                 $stmtBloquear->close();
-                echo "Sua conta foi bloqueada temporariamente devido a muitas tentativas de login malsucedidas. Por favor, tente novamente mais tarde.";
+                echo "Sua conta foi bloqueada temporariamente devido a muitas tentativas malsucedidas. Por favor, tente novamente mais tarde.";
                 exit();
             } else {
                 // Atualizar o contador de tentativas de login
